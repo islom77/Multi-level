@@ -11,7 +11,7 @@ use App\Models\Time;
 class Mock extends Model
 {
     use SoftDeletes;
-    protected $table = 'mock';
+    protected $table = 'mocks';
     protected $fillable = ['name', 'description'];
 
     public function parts()
