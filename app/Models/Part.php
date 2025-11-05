@@ -5,13 +5,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\MockQuestion;
 
-
 class Part extends Model
 {
-    use SoftDeletes;
-    protected $table = 'part';
-    protected $fillable = ['mock_id', 'name'];
-
+    protected $fillable = ['name'];
 
     public function mockQuestions()
     {

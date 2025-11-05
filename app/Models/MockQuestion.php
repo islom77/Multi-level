@@ -9,6 +9,8 @@ use App\Models\Part;
 use App\Models\Mock;
 class MockQuestion extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'mock_questions';
     protected $fillable = ['question_id', 'skill_id', 'part_id', 'mock_id', 'limit_taymer'];
 

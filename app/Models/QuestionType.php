@@ -7,7 +7,6 @@ use App\Models\Question;
 class QuestionType extends Model
 {
     use SoftDeletes;
-    protected $table = 'questions_type';
     protected $fillable = ['name'];
 
     public function questions()

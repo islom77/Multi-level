@@ -11,7 +11,7 @@ class Time extends Model
 {
     use SoftDeletes;
     protected $table = 'time';
-    protected $fillable = ['mock_id', 'part_id', 'timer'];
+    protected $fillable = ['mock_id', 'part_id', 'timer', 'description', 'audio_file', 'preperation_time'];
 
     public function mock()
     {
