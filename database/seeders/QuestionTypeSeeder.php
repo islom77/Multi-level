@@ -22,6 +22,7 @@ class QuestionTypeSeeder extends Seeder
             ['name' => 'Matching'],
             ['name' => 'Listening Comprehension'],
             ['name' => 'Speaking Task'],
+            ['name' => 'Instruction'], // Ko'rsatmalar uchun
         ];
 
         foreach ($questionTypes as $type) {

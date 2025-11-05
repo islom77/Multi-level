@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('question_id')->constrained('questions')->onDelete('cascade');
             $table->string('title');
-            $table->boolean('correct')->default(false);
+            $table->text('text')->nullable(); // Option uchun qo'shimcha matn
+            $table->integer('order')->nullable(); // Tartib raqami (0=A, 1=B, 2=C, 3=D, ...)
             $table->timestamps();
             $table->softDeletes();
         });
-        
+
     }
 
     /**

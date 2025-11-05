@@ -15,5 +15,16 @@ class Skill extends Model
     {
         return $this->hasMany(MockQuestion::class, 'skill_id');
     }
+
+    /**
+     * Many-to-Many relationship with Mocks
+     * Pivot jadval: mock_skill (title, text, audio, photo bilan)
+     */
+    public function mocks()
+    {
+        return $this->belongsToMany(Mock::class, 'mock_skill')
+            ->withPivot(['title', 'text', 'audio', 'photo'])
+            ->withTimestamps();
+    }
 }
 

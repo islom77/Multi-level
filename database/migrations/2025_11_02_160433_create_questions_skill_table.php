@@ -14,14 +14,13 @@ return new class extends Migration
         Schema::create('mock_questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('question_id')->constrained('questions')->onDelete('cascade');
-            $table->foreignId('skill_id')->constrained('skills')->onDelete('cascade');
+            $table->foreignId('mock_skill_id')->constrained('mock_skill')->onDelete('cascade');
             $table->foreignId('part_id')->constrained('parts')->onDelete('cascade');
-            $table->foreignId('mock_id')->constrained('mocks')->onDelete('cascade');
             $table->integer('limit_taymer')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
-        
+
     }
 
     /**

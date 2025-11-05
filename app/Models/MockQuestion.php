@@ -12,16 +12,11 @@ class MockQuestion extends Model
     use SoftDeletes;
 
     protected $table = 'mock_questions';
-    protected $fillable = ['question_id', 'skill_id', 'part_id', 'mock_id', 'limit_taymer'];
+    protected $fillable = ['question_id', 'mock_skill_id', 'part_id', 'limit_taymer'];
 
     public function question()
     {
         return $this->belongsTo(Question::class, 'question_id');
-    }
-
-    public function skill()
-    {
-        return $this->belongsTo(Skill::class, 'skill_id');
     }
 
     public function part()
@@ -29,8 +24,12 @@ class MockQuestion extends Model
         return $this->belongsTo(Part::class, 'part_id');
     }
 
-    public function mock()
+    /**
+     * MockSkill pivot jadvaliga bog'lanish
+     * Bu orqali Mock va Skill larga ham kirishimiz mumkin
+     */
+    public function mockSkill()
     {
-        return $this->belongsTo(Mock::class, 'mock_id');
+        return $this->belongsTo(MockSkill::class, 'mock_skill_id');
     }
 }
