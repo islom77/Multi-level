@@ -40,10 +40,14 @@ class MockSkill extends Pivot
     }
 
     /**
-     * Bu MockSkill ga tegishli barcha MockQuestions
+     * Part bilan many-to-many relationship
+     * Pivot: mock_skill_part
      */
-    public function mockQuestions()
+    public function parts()
     {
-        return $this->hasMany(MockQuestion::class, 'mock_skill_id');
+        return $this->belongsToMany(Part::class, 'mock_skill_part', 'mock_skill_id', 'part_id')
+            ->withPivot(['waiting_time', 'timer', 'title', 'text', 'audio', 'photo'])
+            ->withTimestamps()
+            ->using(MockSkillPart::class);
     }
 }

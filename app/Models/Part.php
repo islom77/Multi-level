@@ -9,20 +9,16 @@ class Part extends Model
 {
     protected $fillable = ['name'];
 
-    public function mockQuestions()
-    {
-        return $this->hasMany(MockQuestion::class, 'part_id');
-    }
-
     /**
-     * Many-to-Many relationship with Mocks
-     * Pivot jadval: mock_part (waiting_time, timer, title, text, audio, photo)
+     * MockSkill bilan many-to-many relationship
+     * Pivot: mock_skill_part
      */
-    public function mocks()
+    public function mockSkills()
     {
-        return $this->belongsToMany(Mock::class, 'mock_part')
+        return $this->belongsToMany(MockSkill::class, 'mock_skill_part', 'part_id', 'mock_skill_id')
             ->withPivot(['waiting_time', 'timer', 'title', 'text', 'audio', 'photo'])
-            ->withTimestamps();
+            ->withTimestamps()
+            ->using(MockSkillPart::class);
     }
 }
 

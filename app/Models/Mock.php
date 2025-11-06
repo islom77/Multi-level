@@ -26,18 +26,8 @@ class Mock extends Model
     {
         return $this->belongsToMany(Skill::class, 'mock_skill')
             ->withPivot(['title', 'text', 'audio', 'photo'])
-            ->withTimestamps();
-    }
-
-    /**
-     * Many-to-Many relationship with Parts
-     * Pivot jadval: mock_part (waiting_time, timer, title, text, audio, photo)
-     */
-    public function parts()
-    {
-        return $this->belongsToMany(Part::class, 'mock_part')
-            ->withPivot(['waiting_time', 'timer', 'title', 'text', 'audio', 'photo'])
-            ->withTimestamps();
+            ->withTimestamps()
+            ->using(MockSkill::class);
     }
 }
 

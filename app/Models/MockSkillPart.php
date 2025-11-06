@@ -5,17 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class MockPart extends Pivot
+class MockSkillPart extends Pivot
 {
     use SoftDeletes;
 
-    protected $table = 'mock_part';
+    protected $table = 'mock_skill_part';
 
-    // Pivot model uchun incrementing true qilish kerak (chunki id bor)
     public $incrementing = true;
 
     protected $fillable = [
-        'mock_id',
+        'mock_skill_id',
         'part_id',
         'waiting_time',
         'timer',
@@ -26,18 +25,26 @@ class MockPart extends Pivot
     ];
 
     /**
-     * Mock relationship
+     * MockSkill bilan bog'lanish
      */
-    public function mock()
+    public function mockSkill()
     {
-        return $this->belongsTo(Mock::class, 'mock_id');
+        return $this->belongsTo(MockSkill::class, 'mock_skill_id');
     }
 
     /**
-     * Part relationship
+     * Part bilan bog'lanish
      */
     public function part()
     {
         return $this->belongsTo(Part::class, 'part_id');
+    }
+
+    /**
+     * MockQuestion'lar
+     */
+    public function mockQuestions()
+    {
+        return $this->hasMany(MockQuestion::class, 'mock_skill_part_id');
     }
 }
