@@ -72,14 +72,26 @@ class CreateQuestion extends CreateRecord
                 }
             }
 
-            // Options yaratish
+            // Options yaratish va true_option_id ni belgilash
             if (isset($data['options']) && count($data['options']) > 0) {
-                foreach ($data['options'] as $optionData) {
-                    $parentQuestion->options()->create([
+                $trueOptionId = null;
+
+                foreach ($data['options'] as $index => $optionData) {
+                    $option = $parentQuestion->options()->create([
                         'title' => $optionData['title'],
                         'text' => $optionData['text'] ?? null,
-                        'order' => $optionData['order'] ?? null,
+                        'order' => $index,
                     ]);
+
+                    // is_correct checkbox tekshirish
+                    if (isset($optionData['is_correct']) && $optionData['is_correct']) {
+                        $trueOptionId = $option->id;
+                    }
+                }
+
+                // true_option_id ni saqlash
+                if ($trueOptionId && in_array($questionType?->name, ['Multiple Choice', 'True/False'])) {
+                    $parentQuestion->update(['true_option_id' => $trueOptionId]);
                 }
             }
         }

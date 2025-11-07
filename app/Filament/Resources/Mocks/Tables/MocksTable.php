@@ -7,11 +7,13 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\CreatedAtColumn;
 use Filament\Tables\Columns\UpdatedAtColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use App\Models\Mock;
 
 class MocksTable
 {
@@ -29,6 +31,12 @@ class MocksTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('viewPdf')
+                    ->label('PDF ko\'rish')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->url(fn (Mock $record): string => route('mocks.pdf', $record))
+                    ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

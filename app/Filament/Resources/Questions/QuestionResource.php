@@ -109,21 +109,53 @@ class QuestionResource extends Resource
                             ->relationship('questionData')
                             ->schema([
                                 RichEditor::make('text')
-                                    ->label('Matn (Rich Editor)')
+                                    ->label('Matn (Rich Editor) - [blank] dan foydalaning')
                                     ->toolbarButtons([
+                                        'attachFiles',
+                                        'blockquote',
                                         'bold',
-                                        'italic',
-                                        'underline',
-                                        'strike',
-                                        'link',
                                         'bulletList',
-                                        'orderedList',
+                                        'codeBlock',
                                         'h2',
                                         'h3',
-                                        'blockquote',
-                                        'codeBlock',
+                                        'italic',
+                                        'link',
+                                        'orderedList',
+                                        'redo',
+                                        'strike',
+                                        'underline',
+                                        'undo',
                                     ])
-                                    ->columnSpanFull(),
+                                    ->columnSpanFull()
+                                    ->live(debounce: 500)
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        // [blank] larni sanash
+                                        $blankCount = substr_count(strtolower($state ?? ''), '[blank]');
+
+                                        // Hozirgi child questions
+                                        $currentChildren = $get('../../children') ?? [];
+                                        $currentCount = count($currentChildren);
+
+                                        // Agar [blank] lar ko'p bo'lsa, yangilarini qo'shamiz
+                                        if ($blankCount > $currentCount) {
+                                            for ($i = $currentCount; $i < $blankCount; $i++) {
+                                                $currentChildren[] = [
+                                                    'name' => 'Blank ' . ($i + 1),
+                                                    'text' => 'Blank ' . ($i + 1),
+                                                    'order' => $i + 1,
+                                                    'keyWords' => [
+                                                        ['word' => '']
+                                                    ]
+                                                ];
+                                            }
+                                            $set('../../children', $currentChildren);
+                                        }
+                                        // Agar [blank] lar kam bo'lsa, ortiqchalarini o'chiramiz
+                                        elseif ($blankCount < $currentCount) {
+                                            $currentChildren = array_slice($currentChildren, 0, $blankCount);
+                                            $set('../../children', $currentChildren);
+                                        }
+                                    }),
 
                                 FileUpload::make('audio')
                                     ->label('Audio fayl')
@@ -134,28 +166,30 @@ class QuestionResource extends Resource
                                     ->columnSpanFull(),
                             ])
                             ->columns(1)
-                            ->defaultItems(0)
+                            ->defaultItems(1)
                             ->collapsible(),
 
                         // Child questions va key_words
                         Repeater::make('children')
-                            ->label('Bo\'sh joylar va kalit so\'zlar')
+                            ->label('Bo\'sh joylar va kalit so\'zlar (avtomatik)')
                             ->relationship('children')
                             ->schema([
                                 TextInput::make('name')
                                     ->label('Nomi')
                                     ->required()
-                                    ->default(fn ($get) => "Blank " . (count($get('../../children') ?? []) + 1)),
+                                    ->columnSpanFull(),
 
                                 TextInput::make('text')
                                     ->label('Bo\'sh joy matni')
-                                    ->default(fn ($get) => "Blank " . (count($get('../../children') ?? []) + 1)),
+                                    ->columnSpanFull(),
 
                                 TextInput::make('order')
                                     ->label('Tartib')
                                     ->numeric()
-                                    ->default(fn ($get) => count($get('../../children') ?? []) + 1)
-                                    ->required(),
+                                    ->required()
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->columnSpanFull(),
 
                                 Repeater::make('keyWords')
                                     ->label('Kalit so\'zlar (to\'g\'ri javoblar)')
@@ -163,17 +197,21 @@ class QuestionResource extends Resource
                                     ->schema([
                                         TextInput::make('word')
                                             ->label('So\'z')
-                                            ->required(),
+                                            ->required()
+                                            ->columnSpanFull(),
                                     ])
                                     ->addActionLabel('Kalit so\'z qo\'shish')
                                     ->collapsible()
                                     ->defaultItems(1)
                                     ->columnSpanFull(),
                             ])
-                            ->columns(3)
+                            ->columns(1)
                             ->collapsible()
                             ->defaultItems(0)
-                            ->addActionLabel('Bo\'sh joy qo\'shish'),
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false)
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Yangi blank'),
                     ])
                     ->visible(fn ($get) =>
                         $get('question_type_id') &&
@@ -188,40 +226,61 @@ class QuestionResource extends Resource
                             ->label('Options')
                             ->relationship('options')
                             ->schema([
+                                \Filament\Forms\Components\Checkbox::make('is_correct')
+                                    ->label('To\'g\'ri javob')
+                                    ->inline()
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        // Agar bu checkbox belgilangan bo'lsa, boshqalarini o'chirish
+                                        if ($state) {
+                                            $options = $get('../../options') ?? [];
+                                            foreach ($options as $key => $option) {
+                                                if ($key !== $get('../../' . $get('statePath'))) {
+                                                    $set("../../options.{$key}.is_correct", false);
+                                                }
+                                            }
+                                        }
+                                    })
+                                    ->columnSpanFull(),
+
                                 TextInput::make('title')
-                                    ->label('Option matni')
+                                    ->label('Option matni (qisqa)')
                                     ->required()
-                                    ->columnSpan(2),
+                                    ->columnSpanFull(),
 
-                                Textarea::make('text')
-                                    ->label('Qo\'shimcha ma\'lumot')
-                                    ->rows(2)
-                                    ->columnSpan(2),
-
-                                TextInput::make('order')
-                                    ->label('Tartib (0=A, 1=B...)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->default(fn ($get) => count($get('../../options') ?? []))
-                                    ->required()
-                                    ->columnSpan(1),
+                                RichEditor::make('text')
+                                    ->label('Option matni (to\'liq)')
+                                    ->toolbarButtons([
+                                        'attachFiles',
+                                        'blockquote',
+                                        'bold',
+                                        'bulletList',
+                                        'codeBlock',
+                                        'h2',
+                                        'h3',
+                                        'italic',
+                                        'link',
+                                        'orderedList',
+                                        'redo',
+                                        'strike',
+                                        'underline',
+                                        'undo',
+                                    ])
+                                    ->columnSpanFull(),
                             ])
-                            ->columns(5)
+                            ->columns(1)
                             ->addActionLabel('Option qo\'shish')
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string =>
                                 $state['title'] ?? 'Yangi option'
                             )
                             ->reorderable()
-                            ->orderColumn('order')
-                            ->defaultItems(0),
-
-                        Select::make('true_option_id')
-                            ->label('To\'g\'ri javob (Matching uchun)')
-                            ->relationship('trueOption', 'title')
-                            ->searchable()
-                            ->preload()
-                            ->helperText('Matching savollarda child question uchun to\'g\'ri javobni belgilang'),
+                            ->defaultItems(fn ($get) =>
+                                $get('question_type_id') &&
+                                QuestionType::find($get('question_type_id'))?->name === 'True/False'
+                                ? 2
+                                : 4
+                            ),
                     ])
                     ->visible(fn ($get) =>
                         $get('question_type_id') &&
