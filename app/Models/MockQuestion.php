@@ -11,7 +11,7 @@ class MockQuestion extends Model
     use SoftDeletes;
 
     protected $table = 'mock_questions';
-    protected $fillable = ['question_id', 'mock_skill_part_id', 'limit_taymer'];
+    protected $fillable = ['question_id', 'mock_skill_part_id', 'limit_taymer', 'order'];
 
     public function question()
     {

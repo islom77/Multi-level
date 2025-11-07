@@ -13,6 +13,7 @@ use Filament\Forms\Components\RichEditor;
 use App\Models\Skill;
 use App\Models\Part;
 use App\Models\Question;
+use App\Models\QuestionType;
 
 class MockForm
 {
@@ -49,37 +50,39 @@ class MockForm
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                         ->live()
                                         ->columnSpanFull(),
+                                    Section::make('Qo\'shimcha')->schema([
+                                        TextInput::make('pivot.title')
+                                            ->label('Skill Sarlavhasi')
+                                            ->maxLength(255),
 
-                                    TextInput::make('pivot.title')
-                                        ->label('Skill Sarlavhasi')
-                                        ->maxLength(255),
+                                        RichEditor::make('pivot.text')
+                                            ->label('Skill Matni')
+                                            ->toolbarButtons([
+                                                'bold',
+                                                'italic',
+                                                'underline',
+                                                'link',
+                                                'bulletList',
+                                                'orderedList',
+                                            ])
+                                            ->columnSpanFull(),
 
-                                    RichEditor::make('pivot.text')
-                                        ->label('Skill Matni')
-                                        ->toolbarButtons([
-                                            'bold',
-                                            'italic',
-                                            'underline',
-                                            'link',
-                                            'bulletList',
-                                            'orderedList',
-                                        ])
-                                        ->columnSpanFull(),
+                                        FileUpload::make('pivot.audio')
+                                            ->label('Skill Audio')
+                                            ->disk('public')
+                                            ->directory('mock-skills')
+                                            ->acceptedFileTypes(['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'])
+                                            ->maxSize(10240),
 
-                                    FileUpload::make('pivot.audio')
-                                        ->label('Skill Audio')
-                                        ->disk('public')
-                                        ->directory('mock-skills')
-                                        ->acceptedFileTypes(['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'])
-                                        ->maxSize(10240),
-
-                                    FileUpload::make('pivot.photo')
-                                        ->label('Skill Rasm')
-                                        ->disk('public')
-                                        ->directory('mock-skills')
-                                        ->image()
-                                        ->maxSize(5120),
-
+                                        FileUpload::make('pivot.photo')
+                                            ->label('Skill Rasm')
+                                            ->disk('public')
+                                            ->directory('mock-skills')
+                                            ->image()
+                                            ->maxSize(5120),
+                                    ])
+                                    ->columnSpanFull()
+                                    ->collapsed(),
                                     // Skill ichida Parts
                                     Repeater::make('parts')
                                         ->label('Part\'lar')
@@ -91,7 +94,17 @@ class MockForm
                                                 ->searchable()
                                                 ->preload()
                                                 ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                                ->columnSpanFull(),
+                                                ->columnSpanFull()
+                                                ->live()
+                                                ->default(function ($get) {
+                                                    // Hozirgi skill'dagi part'lar sonini sanash
+                                                    $parts = $get('../../parts') ?? [];
+                                                    $partNumber = count($parts);
+
+                                                    // Database'dan "Part {$partNumber}" nomli part'ni topish
+                                                    $part = Part::where('name', 'Part ' . $partNumber)->first();
+                                                    return $part?->id;
+                                                }),
 
                                             TextInput::make('waiting_time')
                                                 ->label('Kutish vaqti (soniya)')
@@ -110,7 +123,12 @@ class MockForm
                                             TextInput::make('title')
                                                 ->label('Part Sarlavhasi')
                                                 ->maxLength(255)
-                                                ->columnSpanFull(),
+                                                ->columnSpanFull()
+                                                ->default(function ($get) {
+                                                    // Hozirgi skill'dagi part'lar sonini sanash
+                                                    $parts = $get('../../parts') ?? [];
+                                                    return 'Part ' . count($parts);
+                                                }),
 
                                             RichEditor::make('text')
                                                 ->label('Part Matni (Passage)')
@@ -154,7 +172,32 @@ class MockForm
                                                         ->required()
                                                         ->searchable()
                                                         ->preload()
-                                                        ->columnSpan(2),
+                                                        ->columnSpanFull()
+                                                        ->createOptionForm([
+                                                            Select::make('question_type_id')
+                                                                ->label('Savol turi')
+                                                                ->options(QuestionType::pluck('name', 'id'))
+                                                                ->required()
+                                                                ->searchable()
+                                                                ->preload()
+                                                                ->columnSpanFull(),
+
+                                                            TextInput::make('name')
+                                                                ->label('Savol nomi')
+                                                                ->required()
+                                                                ->maxLength(255)
+                                                                ->columnSpanFull(),
+
+                                                            Textarea::make('text')
+                                                                ->label('Savol matni')
+                                                                ->rows(3)
+                                                                ->maxLength(65535)
+                                                                ->columnSpanFull(),
+                                                        ])
+                                                        ->createOptionUsing(function (array $data): int {
+                                                            $question = Question::create($data);
+                                                            return $question->id;
+                                                        }),
 
                                                     TextInput::make('limit_taymer')
                                                         ->label('Vaqt limiti (soniya)')
@@ -162,27 +205,46 @@ class MockForm
                                                         ->suffix('s')
                                                         ->default(0)
                                                         ->minValue(0)
-                                                        ->columnSpan(1),
+                                                        ->columnSpanFull(),
                                                 ])
-                                                ->columns(3)
-                                                ->collapsible()
                                                 ->collapsed()
-                                                ->itemLabel(fn (array $state): ?string =>
-                                                    isset($state['question_id'])
-                                                        ? Question::find($state['question_id'])?->name ?? 'Yangi savol'
-                                                        : 'Yangi savol'
-                                                )
+                                                ->cloneable()
+                                                ->reorderableWithButtons()
+                                                ->addActionLabel('Savol qo\'shish')
+                                                ->itemLabel(function (array $state, Repeater $component): ?string {
+                                                    $statePath = $component->getStatePath();
+                                                    $items = data_get($component->getLivewire(), $statePath) ?? [];
+
+                                                    // Hozirgi item'ning indeksini topish
+                                                    $index = 1;
+                                                    foreach ($items as $i => $item) {
+                                                        if ($item == $state) {
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    return 'Savol ' . $index;
+                                                })
                                                 ->defaultItems(0)
                                                 ->columnSpanFull(),
                                         ])
                                         ->columns(2)
                                         ->collapsible()
                                         ->collapsed()
-                                        ->itemLabel(fn (array $state): ?string =>
-                                            isset($state['part_id'])
-                                                ? Part::find($state['part_id'])?->name ?? 'Yangi part'
-                                                : 'Yangi part'
-                                        )
+                                        ->itemLabel(function (array $state): ?string {
+                                            // Agar title to'ldirilgan bo'lsa uni ko'rsatish
+                                            if (!empty($state['title'])) {
+                                                return $state['title'];
+                                            }
+
+                                            // Aks holda part_id bo'yicha nom olish
+                                            if (isset($state['part_id'])) {
+                                                $part = Part::find($state['part_id']);
+                                                return $part ? $part->name : 'Yangi part';
+                                            }
+
+                                            return 'Yangi part';
+                                        })
                                         ->defaultItems(0)
                                         ->columnSpanFull(),
                                 ])
@@ -204,6 +266,7 @@ class MockForm
                         ])
                         ->collapsible(),
                 ])
+                ->columnSpanFull(),
             ]);
     }
 }

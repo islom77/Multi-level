@@ -13,7 +13,7 @@ class Question extends Model
 {
     use SoftDeletes;
     protected $table = 'questions';
-    protected $fillable = ['question_type_id', 'name', 'text', 'order', 'parent_id', 'true_option_id'];
+    protected $fillable = ['question_type_id', 'name', 'text', 'parent_id', 'true_option_id'];
 
     public function questionType()
     {
